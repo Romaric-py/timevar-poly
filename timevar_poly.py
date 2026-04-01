@@ -3,7 +3,7 @@ timevar-poly: A lightweight engine for time-variant polynomials.
 Supports algebraic operations and temporal/spatial derivatives.
 """
 
-__version__ = "0.1.2"
+__version__ = "0.2.0"
 __author__ = "Ifèdé Assogba"
 
 
@@ -153,8 +153,9 @@ class TimeFunction:
 
 
 class TimeVariantPolynomial:
-    def __init__(self, data):
+    def __init__(self, data, label='P'):
         self.data = {deg: v for deg, v in data.items() if self._is_not_zero(v)}
+        self.label = label
 
     def _is_not_zero(self, val):
         if isinstance(val, (int, float)):
@@ -178,13 +179,29 @@ class TimeVariantPolynomial:
                 terms.append(f"{c_str}x^{deg}")
         return " + ".join(terms).replace("+ -", "- ")
 
-    def __call__(self, x, t=None):
+    def __call__(self, x=None, t=None):
+        if x is None and t is None:
+            raise ValueError("Must provide at least one of x or t")
 
-        res = 0
-        for deg, coeff in self.data.items():
-            c_val = coeff(t) if isinstance(coeff, TimeFunction) else coeff
-            res += c_val * (x**deg)
-        return res
+        if x is None:
+            new_data = {
+                deg: (c(t) if isinstance(c, TimeFunction) else c)
+                for deg, c in self.data.items()
+            }
+            return TimeVariantPolynomial(new_data)
+
+        elif t is None:
+            def t_func(t_val):
+                return self(x, t_val)
+            t_func.__name__ = f"{self.label}({x}, t)"
+            return TimeFunction(t_func)
+
+        else:
+            total = 0
+            for deg, coeff in self.data.items():
+                c_val = coeff(t) if isinstance(coeff, TimeFunction) else coeff
+                total += c_val * (x ** deg)
+            return total
 
     def __add__(self, other):
         if isinstance(other, (int, float)):
@@ -232,7 +249,7 @@ if __name__ == "__main__":
         return x
 
     def sqrt(x):
-        return x**2
+        return x**.5
 
     def cube(x):
         return x**3
