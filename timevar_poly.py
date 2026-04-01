@@ -3,7 +3,7 @@ timevar-poly: A lightweight engine for time-variant polynomials.
 Supports algebraic operations and temporal/spatial derivatives.
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __author__ = "Ifèdé Assogba"
 
 
